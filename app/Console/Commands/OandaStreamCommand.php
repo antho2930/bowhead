@@ -26,8 +26,14 @@ class OandaStreamCommand extends Command
     public function zmarkOHLC($ticker)
     {
         $ticker = json_decode($ticker,1);
-        $last_price = $ticker['tick']['bid'];
-        $instrument = $ticker['tick']['instrument'];
+        if(isset($ticker['tick'])) {
+            $last_price = $ticker['tick']['bid'];
+            $instrument = $ticker['tick']['instrument'];
+        }
+        else {
+            $last_price = $ticker['bids'][0]['price'];
+            $instrument = $ticker['instrument'];
+        }
         $timeid = date('YmdHi'); // 201705301522 unique for date
         $volume = 0;
         \DB::insert("
@@ -68,8 +74,14 @@ class OandaStreamCommand extends Command
             $this->markOHLC($line);
 
             $thisline   = json_decode($line,1);
-            $ins        = $thisline['tick']['instrument'];
-            $curr[$ins] = (($thisline['tick']['bid'] + $thisline['tick']['ask'])/2);
+            if(isset($thisline['tick'])) {
+                $ins        = $thisline['tick']['instrument'];
+                $curr[$ins] = (($thisline['tick']['bid'] + $thisline['tick']['ask'])/2);
+            }
+            else {
+                $ins        = $thisline['instrument'];
+                $curr[$ins] = (($thisline['bids'][0]['price'] + $thisline['asks'][0]['price'])/2);
+            }
 
             $output = [];
             foreach ($curr as $instrument => $bid) {
